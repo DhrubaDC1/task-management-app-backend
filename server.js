@@ -33,8 +33,27 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     });
 });
 
+// Create a route to get the file by its filename
+app.get('/api/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'uploads', filename);
+
+    // Check if the file exists
+    fs.exists(filePath, (exists) => {
+        if (exists) {
+            res.sendFile(filePath, (err) => {
+                if (err) {
+                    res.status(500).json({ error: 'Failed to send file' });
+                }
+            });
+        } else {
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
+});
+
 // Create a route to get the number of files in the 'uploads' folder
-app.get('/api/files/count', (req, res) => {
+app.get('/api/count', (req, res) => {
     const uploadDir = path.join(__dirname, 'uploads');
 
     // Read the contents of the 'uploads' directory
