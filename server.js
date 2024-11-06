@@ -1,0 +1,59 @@
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Initialize express app
+const app = express();
+
+// Enable CORS for all origins
+app.use(cors());
+
+// Set up multer storage without renaming files
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // Set the destination folder for uploaded files
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        // Use the original file name
+        cb(null, file.originalname);
+    }
+});
+
+// Create an upload instance without file filter (allows any file type)
+const upload = multer({ storage: storage });
+
+// Create a route to handle file uploads (single file)
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    res.json({
+        message: 'File uploaded successfully!',
+        file: req.file
+    });
+});
+
+// Create a route to get the file by its filename
+app.get('/api/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'uploads', filename);
+
+    // Check if the file exists
+    fs.exists(filePath, (exists) => {
+        if (exists) {
+            res.sendFile(filePath, (err) => {
+                if (err) {
+                    res.status(500).json({ error: 'Failed to send file' });
+                }
+            });
+        } else {
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
